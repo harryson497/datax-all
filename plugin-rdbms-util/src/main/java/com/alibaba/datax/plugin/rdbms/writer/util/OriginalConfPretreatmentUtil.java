@@ -36,6 +36,9 @@ public final class OriginalConfPretreatmentUtil {
         dealWriteMode(originalConfig, dataBaseType);
     }
 
+    public static void doPretreatmentEmail(Configuration originalConfig, DataBaseType dataBaseType) {//注释--anguoan
+    }
+
     public static void doCheckBatchSize(Configuration originalConfig) {
         // 检查batchSize 配置（选填，如果未填写，则设置为默认值）
         int batchSize = originalConfig.getInt(Key.BATCH_SIZE, Constant.DEFAULT_BATCH_SIZE);
@@ -62,7 +65,7 @@ public final class OriginalConfPretreatmentUtil {
                 throw DataXException.asDataXException(DBUtilErrorCode.REQUIRED_VALUE, "您未配置的写入数据库表的 jdbcUrl.");
             }
 
-            jdbcUrl = DATABASE_TYPE.appendJDBCSuffixForWriter(jdbcUrl);
+            jdbcUrl = DATABASE_TYPE.appendJDBCSuffixForReader(jdbcUrl);
             originalConfig.set(String.format("%s[%d].%s", Constant.CONN_MARK, i, Key.JDBC_URL),
                     jdbcUrl);
 
@@ -99,10 +102,10 @@ public final class OriginalConfPretreatmentUtil {
         } else {
             boolean isPreCheck = originalConfig.getBool(Key.DRYRUN, false);
             List<String> allColumns;
-            if (isPreCheck){
-                allColumns = DBUtil.getTableColumnsByConn(DATABASE_TYPE,connectionFactory.getConnecttionWithoutRetry(), oneTable, connectionFactory.getConnectionInfo());
-            }else{
-                allColumns = DBUtil.getTableColumnsByConn(DATABASE_TYPE,connectionFactory.getConnecttion(), oneTable, connectionFactory.getConnectionInfo());
+            if (isPreCheck) {
+                allColumns = DBUtil.getTableColumnsByConn(DATABASE_TYPE, connectionFactory.getConnecttionWithoutRetry(), oneTable, connectionFactory.getConnectionInfo());
+            } else {
+                allColumns = DBUtil.getTableColumnsByConn(DATABASE_TYPE, connectionFactory.getConnecttion(), oneTable, connectionFactory.getConnectionInfo());
             }
 
             LOG.info("table:[{}] all columns:[\n{}\n].", oneTable,
@@ -122,7 +125,7 @@ public final class OriginalConfPretreatmentUtil {
                 ListUtil.makeSureNoValueDuplicate(userConfiguredColumns, false);
 
                 // 检查列是否都为数据库表中正确的列（通过执行一次 select column from table 进行判断）
-                DBUtil.getColumnMetaData(connectionFactory.getConnecttion(), oneTable,StringUtils.join(userConfiguredColumns, ","));
+                DBUtil.getColumnMetaData(connectionFactory.getConnecttion(), oneTable, StringUtils.join(userConfiguredColumns, ","));
             }
         }
     }
@@ -160,7 +163,7 @@ public final class OriginalConfPretreatmentUtil {
             forceUseUpdate = true;
         }
 
-        String writeDataSqlTemplate = WriterUtil.getWriteTemplate(columns, valueHolders, writeMode,dataBaseType, forceUseUpdate);
+        String writeDataSqlTemplate = WriterUtil.getWriteTemplate(columns, valueHolders, writeMode, dataBaseType, forceUseUpdate);
 
         LOG.info("Write data [\n{}\n], which jdbcUrl like:[{}]", writeDataSqlTemplate, jdbcUrl);
 
@@ -169,8 +172,8 @@ public final class OriginalConfPretreatmentUtil {
 
     public static boolean isOB10(String jdbcUrl) {
         //ob10的处理
-        if (jdbcUrl.startsWith(com.alibaba.datax.plugin.rdbms.writer.Constant.OB10_SPLIT_STRING)) {
-            String[] ss = jdbcUrl.split(com.alibaba.datax.plugin.rdbms.writer.Constant.OB10_SPLIT_STRING_PATTERN);
+        if (jdbcUrl.startsWith(Constant.OB10_SPLIT_STRING)) {
+            String[] ss = jdbcUrl.split(Constant.OB10_SPLIT_STRING_PATTERN);
             if (ss.length != 3) {
                 throw DataXException
                         .asDataXException(

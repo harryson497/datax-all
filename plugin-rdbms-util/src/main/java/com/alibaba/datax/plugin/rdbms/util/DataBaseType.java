@@ -18,12 +18,8 @@ public enum DataBaseType {
     PostgreSQL("postgresql", "org.postgresql.Driver"),
     RDBMS("rdbms", "com.alibaba.datax.plugin.rdbms.util.DataBaseType"),
     DB2("db2", "com.ibm.db2.jcc.DB2Driver"),
-    ADS("ads","com.mysql.jdbc.Driver"),
-    ClickHouse("clickhouse", "ru.yandex.clickhouse.ClickHouseDriver"),
-    KingbaseES("kingbasees", "com.kingbase8.Driver"),
-    Oscar("oscar", "com.oscar.Driver"),
-    OceanBase("oceanbase", "com.alipay.oceanbase.jdbc.Driver");
-
+    ADS("ads", "com.mysql.jdbc.Driver"),
+	Hive("hive", "org.apache.hive.jdbc.HiveDriver");
 
     private String typeName;
     private String driverClassName;
@@ -43,7 +39,6 @@ public enum DataBaseType {
         switch (this) {
             case MySql:
             case DRDS:
-            case OceanBase:
                 suffix = "yearIsDateType=false&zeroDateTimeBehavior=convertToNull&tinyInt1isBit=false&rewriteBatchedStatements=true";
                 if (jdbc.contains("?")) {
                     result = jdbc + "&" + suffix;
@@ -59,13 +54,9 @@ public enum DataBaseType {
                 break;
             case PostgreSQL:
                 break;
-            case ClickHouse:
+            case Hive:
                 break;
             case RDBMS:
-                break;
-            case KingbaseES:
-                break;
-            case Oscar:
                 break;
             default:
                 throw DataXException.asDataXException(DBUtilErrorCode.UNSUPPORTED_TYPE, "unsupported database type.");
@@ -96,27 +87,15 @@ public enum DataBaseType {
                 break;
             case Oracle:
                 break;
+            case Hive:
+                break;
             case SQLServer:
                 break;
             case DB2:
                 break;
             case PostgreSQL:
                 break;
-            case ClickHouse:
-                break;
             case RDBMS:
-                break;
-            case KingbaseES:
-                break;
-            case Oscar:
-                break;
-            case OceanBase:
-                suffix = "yearIsDateType=false&zeroDateTimeBehavior=convertToNull&tinyInt1isBit=false&rewriteBatchedStatements=true";
-                if (jdbc.contains("?")) {
-                    result = jdbc + "&" + suffix;
-                } else {
-                    result = jdbc + "?" + suffix;
-                }
                 break;
             default:
                 throw DataXException.asDataXException(DBUtilErrorCode.UNSUPPORTED_TYPE, "unsupported database type.");
@@ -130,6 +109,7 @@ public enum DataBaseType {
 
         switch (this) {
             case MySql:
+            case Hive:
             case Oracle:
                 if (splitPk.length() >= 2 && splitPk.startsWith("`") && splitPk.endsWith("`")) {
                     result = splitPk.substring(1, splitPk.length() - 1).toLowerCase();
@@ -142,8 +122,6 @@ public enum DataBaseType {
                 break;
             case DB2:
             case PostgreSQL:
-            case KingbaseES:
-            case Oscar:
                 break;
             default:
                 throw DataXException.asDataXException(DBUtilErrorCode.UNSUPPORTED_TYPE, "unsupported database type.");
@@ -162,13 +140,13 @@ public enum DataBaseType {
                 break;
             case Oracle:
                 break;
+            case Hive:
+                break;
             case SQLServer:
                 result = "[" + columnName + "]";
                 break;
             case DB2:
             case PostgreSQL:
-            case KingbaseES:
-            case Oscar:
                 break;
             default:
                 throw DataXException.asDataXException(DBUtilErrorCode.UNSUPPORTED_TYPE, "unsupported database type");
@@ -186,15 +164,13 @@ public enum DataBaseType {
                 break;
             case Oracle:
                 break;
+            case Hive:
+                break;
             case SQLServer:
                 break;
             case DB2:
                 break;
             case PostgreSQL:
-                break;
-            case KingbaseES:
-                break;
-            case Oscar:
                 break;
             default:
                 throw DataXException.asDataXException(DBUtilErrorCode.UNSUPPORTED_TYPE, "unsupported database type");

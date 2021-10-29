@@ -18,7 +18,7 @@ import java.util.concurrent.Callable;
 /**
  * Created by judy.lt on 2015/6/4.
  */
-public class PreCheckTask implements Callable<Boolean>{
+public class PreCheckTask implements Callable<Boolean> {
     private static final Logger LOG = LoggerFactory.getLogger(PreCheckTask.class);
     private String userName;
     private String password;
@@ -30,10 +30,10 @@ public class PreCheckTask implements Callable<Boolean>{
                         String password,
                         Configuration connection,
                         DataBaseType dataBaseType,
-                        String splitPkId){
+                        String splitPkId) {
         this.connection = connection;
-        this.userName=userName;
-        this.password=password;
+        this.userName = userName;
+        this.password = password;
         this.dataBaseType = dataBaseType;
         this.splitPkId = splitPkId;
     }
@@ -43,15 +43,15 @@ public class PreCheckTask implements Callable<Boolean>{
         String jdbcUrl = this.connection.getString(Key.JDBC_URL);
         List<Object> querySqls = this.connection.getList(Key.QUERY_SQL, Object.class);
         List<Object> splitPkSqls = this.connection.getList(Key.SPLIT_PK_SQL, Object.class);
-        List<Object> tables = this.connection.getList(Key.TABLE,Object.class);
+        List<Object> tables = this.connection.getList(Key.TABLE, Object.class);
         Connection conn = DBUtil.getConnectionWithoutRetry(this.dataBaseType, jdbcUrl,
                 this.userName, password);
         int fetchSize = 1;
-        if(DataBaseType.MySql.equals(dataBaseType) || DataBaseType.DRDS.equals(dataBaseType)) {
+        if (DataBaseType.MySql.equals(dataBaseType) || DataBaseType.DRDS.equals(dataBaseType)) {
             fetchSize = Integer.MIN_VALUE;
         }
-        try{
-            for (int i=0;i<querySqls.size();i++) {
+        try {
+            for (int i = 0; i < querySqls.size(); i++) {
 
                 String splitPkSql = null;
                 String querySql = querySqls.get(i).toString();
@@ -64,8 +64,8 @@ public class PreCheckTask implements Callable<Boolean>{
             /*verify query*/
                 ResultSet rs = null;
                 try {
-                    DBUtil.sqlValid(querySql,dataBaseType);
-                    if(i == 0) {
+                    DBUtil.sqlValid(querySql, dataBaseType);
+                    if (i == 0) {
                         rs = DBUtil.query(conn, querySql, fetchSize);
                     }
                 } catch (ParserException e) {
@@ -76,11 +76,11 @@ public class PreCheckTask implements Callable<Boolean>{
                     DBUtil.closeDBResources(rs, null, null);
                 }
             /*verify splitPK*/
-                try{
+                try {
                     if (splitPkSqls != null && !splitPkSqls.isEmpty()) {
                         splitPkSql = splitPkSqls.get(i).toString();
-                        DBUtil.sqlValid(splitPkSql,dataBaseType);
-                        if(i == 0) {
+                        DBUtil.sqlValid(splitPkSql, dataBaseType);
+                        if (i == 0) {
                             SingleTableSplitUtil.precheckSplitPk(conn, splitPkSql, fetchSize, table, userName);
                         }
                     }
@@ -89,7 +89,7 @@ public class PreCheckTask implements Callable<Boolean>{
                 } catch (DataXException e) {
                     throw e;
                 } catch (Exception e) {
-                    throw RdbmsException.asSplitPKException(this.dataBaseType, e, splitPkSql,this.splitPkId.trim());
+                    throw RdbmsException.asSplitPKException(this.dataBaseType, e, splitPkSql, this.splitPkId.trim());
                 }
             }
         } finally {

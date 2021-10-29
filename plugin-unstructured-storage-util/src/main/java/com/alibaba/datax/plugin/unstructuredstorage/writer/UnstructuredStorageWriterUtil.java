@@ -48,7 +48,7 @@ public class UnstructuredStorageWriterUtil {
                 Key.WRITE_MODE,
                 UnstructuredStorageWriterErrorCode.REQUIRED_VALUE);
         writeMode = writeMode.trim();
-        Set<String> supportedWriteModes = Sets.newHashSet("truncate", "append",
+        Set<String> supportedWriteModes =   Sets.newHashSet("truncate", "append",
                 "nonConflict");
         if (!supportedWriteModes.contains(writeMode)) {
             throw DataXException

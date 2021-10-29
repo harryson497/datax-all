@@ -29,9 +29,7 @@ public final class Key {
     public final static String BATCH_SIZE = "batchSize";
     
     public final static String BUFFER_SIZE = "bufferSize";
-
-    public final static String IGNORE_INSERT = "ignoreInsert";
-
+    
     public final static String PRE_SQL = "preSql";
 
     public final static String POST_SQL = "postSql";
@@ -39,9 +37,7 @@ public final class Key {
     public final static String SOCKET_TIMEOUT = "socketTimeout";
     
     public final static String RETRY_CONNECTION_TIME = "retryTimes";
-
-    public final static String RETRY_INTERVAL_TIME = "retryIntervalTime";
-
+    
     public final static String JDBC_URL_SUFFIX = "urlSuffix";
 
     /**

@@ -37,4 +37,20 @@ public final class Key {
     public final static String TABLE_RULE = "tableRule";
 
     public final static String DRYRUN = "dryRun";
+    //邮件相关参数
+    public final static String RECIPIENT = "recipient";
+
+    public final static String EMAILUSER = "emailuser";
+
+    public final static String SUBJECT = "subject";
+
+    public final static String EMAILPASSWORD = "emailpassword";
+
+    public final static String EMAILHOST = "emailhost";
+
+    public final static String PORT = "port";
+
+    public final static String FROMEMAIL = "fromemail";
+
+
 }

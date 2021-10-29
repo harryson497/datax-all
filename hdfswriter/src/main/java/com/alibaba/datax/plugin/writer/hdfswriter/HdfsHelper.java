@@ -14,10 +14,12 @@ import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.hadoop.fs.*;
 import org.apache.hadoop.hive.ql.io.orc.OrcOutputFormat;
 import org.apache.hadoop.hive.ql.io.orc.OrcSerde;
+import org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspectorFactory;
 import org.apache.hadoop.hive.serde2.objectinspector.StructObjectInspector;
 import org.apache.hadoop.io.NullWritable;
+import org.apache.hadoop.io.ObjectWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.compress.CompressionCodec;
 import org.apache.hadoop.mapred.*;
@@ -27,6 +29,9 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe;
+import org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat;
+import parquet.hadoop.codec.SnappyCodec;
 
 public  class HdfsHelper {
     public static final Logger LOG = LoggerFactory.getLogger(HdfsWriter.Job.class);
@@ -70,6 +75,7 @@ public  class HdfsHelper {
                     "message:defaultFS =" + defaultFS);
             LOG.error(message);
             throw DataXException.asDataXException(HdfsWriterErrorCode.CONNECT_HDFS_IO_ERROR, e);
+
         }catch (Exception e) {
             String message = String.format("获取FileSystem失败,请检查HDFS地址是否正确: [%s]",
                     "message:defaultFS =" + defaultFS);
@@ -145,6 +151,7 @@ public  class HdfsHelper {
                     dir,fileName);
             LOG.error(message);
             throw DataXException.asDataXException(HdfsWriterErrorCode.CONNECT_HDFS_IO_ERROR, e);
+
         }
         return files;
     }
@@ -294,7 +301,7 @@ public  class HdfsHelper {
         outFormat.setOutputPath(conf, outputPath);
         outFormat.setWorkOutputPath(conf, outputPath);
         if(null != compress) {
-            Class<? extends CompressionCodec> codecClass = getCompressCodec(compress);
+            Class<? extends CompressionCodec> codecClass = getCompressCodec(compress,"text");
             if (null != codecClass) {
                 outFormat.setOutputCompressorClass(conf, codecClass);
             }
@@ -332,7 +339,7 @@ public  class HdfsHelper {
         return transportResult;
     }
 
-    public Class<? extends CompressionCodec>  getCompressCodec(String compress){
+    public Class<? extends CompressionCodec>  getCompressCodec(String compress,String fileType){
         Class<? extends CompressionCodec> codecClass = null;
         if(null == compress){
             codecClass = null;
@@ -345,6 +352,9 @@ public  class HdfsHelper {
             codecClass = org.apache.hadoop.io.compress.SnappyCodec.class;
             // org.apache.hadoop.hive.ql.io.orc.ZlibCodec.class  not public
             //codecClass = org.apache.hadoop.hive.ql.io.orc.ZlibCodec.class;
+            if( "parquet".equalsIgnoreCase("parquet")){
+                codecClass = parquet.hadoop.codec.SnappyCodec.class;
+            }
         }else {
             throw DataXException.asDataXException(HdfsWriterErrorCode.ILLEGAL_VALUE,
                     String.format("目前不支持您配置的 compress 模式 : [%s]", compress));
@@ -372,7 +382,7 @@ public  class HdfsHelper {
 
         FileOutputFormat outFormat = new OrcOutputFormat();
         if(!"NONE".equalsIgnoreCase(compress) && null != compress ) {
-            Class<? extends CompressionCodec> codecClass = getCompressCodec(compress);
+            Class<? extends CompressionCodec> codecClass = getCompressCodec(compress,"orc");
             if (null != codecClass) {
                 outFormat.setOutputCompressorClass(conf, codecClass);
             }
@@ -387,6 +397,65 @@ public  class HdfsHelper {
                 }
             }
             writer.close(Reporter.NULL);
+        } catch (Exception e) {
+            String message = String.format("写文件文件[%s]时发生IO异常,请检查您的网络是否正常！", fileName);
+            LOG.error(message);
+            Path path = new Path(fileName);
+            deleteDir(path.getParent());
+            throw DataXException.asDataXException(HdfsWriterErrorCode.Write_FILE_IO_ERROR, e);
+        }
+    }
+
+    //TODO 待修改  yueli
+
+    /**
+     *
+     * @param lineReceiver
+     * @param config
+     * @param fileName
+     * @param taskPluginCollector
+     */
+    public void parFileStartWrite(RecordReceiver lineReceiver, Configuration config, String fileName,
+                                  TaskPluginCollector taskPluginCollector) {
+        List<Configuration> columns = config.getListConfiguration(Key.COLUMN);
+        String compress = config.getString(Key.COMPRESS, null);
+        List<String> columnNames = getColumnNames(columns);
+        List<ObjectInspector> columnTypeInspectors = getColumnTypeInspectors(columns);
+        StructObjectInspector inspector = (StructObjectInspector) ObjectInspectorFactory
+                .getStandardStructObjectInspector(columnNames, columnTypeInspectors);
+
+
+
+
+        ParquetHiveSerDe parquetHiveSerDe = new ParquetHiveSerDe();
+
+
+        MapredParquetOutputFormat outFormat = new MapredParquetOutputFormat();
+        if (!"NONE".equalsIgnoreCase(compress) && null != compress) {
+            Class<? extends CompressionCodec> codecClass = getCompressCodec(compress,"parquet");
+            if (null != codecClass) {
+                outFormat.setOutputCompressorClass(conf, codecClass);
+            }
+        }
+        try {
+            Properties colProperties = new Properties();
+            colProperties.setProperty("columns", String.join(",", columnNames));
+            List<String> colType = Lists.newArrayList();
+            columns.forEach(c -> colType.add(c.getString(Key.TYPE)));
+            colProperties.setProperty("columns.types", String.join(",", colType));
+
+            RecordWriter writer = (RecordWriter) outFormat.getHiveRecordWriter(conf, new Path(fileName), ObjectWritable.class, true, colProperties, Reporter.NULL);
+
+            Record record = null;
+            while ((record = lineReceiver.getFromReader()) != null) {
+                MutablePair<List<Object>, Boolean> transportResult = transportOneRecord(record, columns, taskPluginCollector);
+                if (!transportResult.getRight()) {
+                    writer.write(null, parquetHiveSerDe.serialize(transportResult.getLeft(), inspector));
+                }
+            }
+            writer.close(Reporter.NULL);
+
+
         } catch (Exception e) {
             String message = String.format("写文件文件[%s]时发生IO异常,请检查您的网络是否正常！", fileName);
             LOG.error(message);

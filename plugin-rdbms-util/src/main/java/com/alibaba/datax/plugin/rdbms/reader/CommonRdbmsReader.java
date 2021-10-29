@@ -238,7 +238,8 @@ public class CommonRdbmsReader {
             recordSender.sendToWriter(record);
             return record;
         }
-        protected Record buildRecord(RecordSender recordSender,ResultSet rs, ResultSetMetaData metaData, int columnNumber, String mandatoryEncoding,
+		
+		protected Record buildRecord(RecordSender recordSender,ResultSet rs, ResultSetMetaData metaData, int columnNumber, String mandatoryEncoding,
         		TaskPluginCollector taskPluginCollector) {
         	Record record = recordSender.createRecord();
 

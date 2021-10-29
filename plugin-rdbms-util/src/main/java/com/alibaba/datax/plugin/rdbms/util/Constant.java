@@ -23,5 +23,4 @@ public final class Constant {
     public static final String ORACLE_SQL = "invalid identifier";
 
 
-
 }

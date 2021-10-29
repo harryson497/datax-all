@@ -40,7 +40,7 @@ public class DESCipher {
 	 * 　　
 	 */
 
-	public static final String KEY = "DESDES";
+	public static final String KEY = "u4Gqu4Z8";
 
 	private final static String DES = "DES";
 

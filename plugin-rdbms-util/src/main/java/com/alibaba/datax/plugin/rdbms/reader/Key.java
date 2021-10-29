@@ -45,14 +45,29 @@ public final class Key {
 	public final static String DBNAME = "dbName";
 
     public final static String DRYRUN = "dryRun";
+    //hive reader
+    public final static String DEFAULT_FS = "defaultFS";//defaultfs
 
-    public static String SPLIT_FACTOR = "splitFactor";
+    public final static String FIELDDELIMITER = "fielddelimiter";
 
-    public final static String WEAK_READ = "weakRead";
+//    public final static String HIVE_SQL = "hivesql";
+//    修改为驼峰命名规则
+    public final static String HIVE_SQL = "hiveSql";
 
-    public final static String SAVE_POINT = "savePoint";
 
-    public final static String REUSE_CONN = "reuseConn";
+    public final static String HIVE_USER = "hiveuser";
 
-    public final static String PARTITION_NAME = "partitionName";
+    public final static String HIVE_PASSWORD = "hivepassword";
+
+//    public final static String HIVE_JDBC = "hivejdbc";
+//    修改为驼峰命名规则
+    public final static String HIVE_JDBC = "hiveJdbc";
+
+    //TODO
+    public final static String FILETYPE = "fileType";
+    public final static String HADOOP_CONFIG = "hadoopConfig";
+    public final static String HAVE_KERBEROS = "haveKerberos";
+    public final static String KERBEROS_KEYTAB_FILE_PATH = "kerberosKeytabFilePath";
+    public final static String KERBEROS_PRINCIPAL = "kerberosPrincipal";
+
 }

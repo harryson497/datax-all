@@ -260,8 +260,8 @@ public class CommonRdbmsWriter {
         }
 
         public void startWriteWithConnection(RecordReceiver recordReceiver, TaskPluginCollector taskPluginCollector, Connection connection) {
+            //获取数据进行pushd到邮件
             this.taskPluginCollector = taskPluginCollector;
-
             // 用于写入数据的时候的类型根据目的表字段类型转换
             this.resultSetMetaData = DBUtil.getColumnMetaData(connection,
                     this.table, StringUtils.join(this.columns, ","));
@@ -286,7 +286,7 @@ public class CommonRdbmsWriter {
 
                     writeBuffer.add(record);
                     bufferBytes += record.getMemorySize();
-
+                    //基于三种策略,数据条数,字节大小
                     if (writeBuffer.size() >= batchSize || bufferBytes >= batchByteSize) {
                         doBatchInsert(connection, writeBuffer);
                         writeBuffer.clear();
@@ -309,8 +309,8 @@ public class CommonRdbmsWriter {
         }
 
         // TODO 改用连接池，确保每次获取的连接都是可用的（注意：连接可能需要每次都初始化其 session）
-        public void startWrite(RecordReceiver recordReceiver,
-                               Configuration writerSliceConfig,
+        public void startWrite(RecordReceiver recordReceiver, 
+                               Configuration writerSliceConfig, 
                                TaskPluginCollector taskPluginCollector) {
             Connection connection = DBUtil.getConnection(this.dataBaseType,
                     this.jdbcUrl, username, password);
@@ -402,20 +402,13 @@ public class CommonRdbmsWriter {
                 throws SQLException {
             for (int i = 0; i < this.columnNumber; i++) {
                 int columnSqltype = this.resultSetMetaData.getMiddle().get(i);
-                String typeName = this.resultSetMetaData.getRight().get(i);
-                preparedStatement = fillPreparedStatementColumnType(preparedStatement, i, columnSqltype, typeName, record.getColumn(i));
+                preparedStatement = fillPreparedStatementColumnType(preparedStatement, i, columnSqltype, record.getColumn(i));
             }
 
             return preparedStatement;
         }
 
-        protected PreparedStatement fillPreparedStatementColumnType(PreparedStatement preparedStatement, int columnIndex,
-                                                                    int columnSqltype, Column column) throws SQLException {
-            return fillPreparedStatementColumnType(preparedStatement, columnIndex, columnSqltype, null, column);
-        }
-
-        protected PreparedStatement fillPreparedStatementColumnType(PreparedStatement preparedStatement, int columnIndex,
-                                                                    int columnSqltype, String typeName, Column column) throws SQLException {
+        protected PreparedStatement fillPreparedStatementColumnType(PreparedStatement preparedStatement, int columnIndex, int columnSqltype, Column column) throws SQLException {
             java.util.Date utilDate;
             switch (columnSqltype) {
                 case Types.CHAR:
@@ -458,11 +451,8 @@ public class CommonRdbmsWriter {
 
                 // for mysql bug, see http://bugs.mysql.com/bug.php?id=35115
                 case Types.DATE:
-                    if (typeName == null) {
-                        typeName = this.resultSetMetaData.getRight().get(columnIndex);
-                    }
-
-                    if (typeName.equalsIgnoreCase("year")) {
+                    if (this.resultSetMetaData.getRight().get(columnIndex)
+                            .equalsIgnoreCase("year")) {
                         if (column.asBigInteger() == null) {
                             preparedStatement.setString(columnIndex + 1, null);
                         } else {
